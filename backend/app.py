@@ -5,14 +5,24 @@ import config
 
 app = Flask(__name__)
 
-CORS(app, origins=["https://687b2d9e4eebc9c728ca3bef--mytodoapp-project.netlify.app"], supports_credentials=True)
+# --- CORS Setup ---
+CORS(
+    app,
+    origins=["https://687b2d9e4eebc9c728ca3bef--mytodoapp-project.netlify.app"],
+    supports_credentials=True,
+    allow_headers=["Content-Type"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+)
 
+# --- MySQL Config ---
 app.config['MYSQL_HOST'] = config.MYSQL_HOST
 app.config['MYSQL_USER'] = config.MYSQL_USER
 app.config['MYSQL_PASSWORD'] = config.MYSQL_PASSWORD
 app.config['MYSQL_DB'] = config.MYSQL_DB
 
 mysql = MySQL(app)
+
+# --- API Routes ---
 
 @app.route('/api/tasks', methods=['GET'])
 def get_tasks():
@@ -25,7 +35,7 @@ def get_tasks():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# POST new task
+
 @app.route('/api/tasks', methods=['POST', 'OPTIONS'])
 def add_task():
     if request.method == 'OPTIONS':
@@ -44,19 +54,25 @@ def add_task():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 @app.route('/api/tasks/<int:id>', methods=['PUT', 'OPTIONS'])
 def update_task(id):
     if request.method == 'OPTIONS':
         return '', 200
     try:
         data = request.get_json()
+        completed = data.get('completed')
+        if completed is None:
+            return jsonify({'error': 'Completed status required'}), 400
+
         cur = mysql.connection.cursor()
-        cur.execute("UPDATE tasks SET is_completed = %s WHERE id = %s", (data['completed'], id))
+        cur.execute("UPDATE tasks SET is_completed = %s WHERE id = %s", (completed, id))
         mysql.connection.commit()
         cur.close()
         return jsonify({'message': 'Task updated'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/tasks/<int:id>', methods=['DELETE', 'OPTIONS'])
 def delete_task(id):
@@ -71,10 +87,11 @@ def delete_task(id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Index route
+
 @app.route('/')
 def index():
     return 'Flask To-Do API Running 🚀'
+
 
 if __name__ == "__main__":
     app.run(debug=True)
