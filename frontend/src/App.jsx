@@ -8,7 +8,7 @@ function App() {
 
   const loadTasks = () => {
     axios
-      .get("http://localhost:5000/api/tasks")
+      .get("https://todoapp-xf5i.onrender.com/api/tasks")
       .then((res) => {
         setTasks(res.data);
         setError(null);
@@ -23,7 +23,7 @@ function App() {
   const addTask = () => {
     if (text.trim() === "") return;
     axios
-      .post("http://localhost:5000/api/tasks", { title: text })
+      .post("https://todoapp-xf5i.onrender.com/api/tasks", { title: text })
       .then(() => {
         setText("");
         loadTasks();
@@ -33,7 +33,7 @@ function App() {
 
   const toggleComplete = (task) => {
     axios
-      .put(`http://localhost:5000/api/tasks/${task.id}`, {
+      .put(`https://todoapp-xf5i.onrender.com/api/tasks/${task.id}`, {
         completed: !task.completed,
       })
       .then(loadTasks)
@@ -42,7 +42,7 @@ function App() {
 
   const deleteTask = (id) => {
     axios
-      .delete(`http://localhost:5000/api/tasks/${id}`)
+      .delete(`https://todoapp-xf5i.onrender.com/api/tasks/${id}`)
       .then(loadTasks)
       .catch(() => setError("Failed to delete task"));
   };
