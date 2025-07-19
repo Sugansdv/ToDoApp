@@ -5,13 +5,8 @@ import config
 
 app = Flask(__name__)
 
-# 🔥 CORS SETTINGS: Allow Netlify frontend origin
-CORS(app, origins=["https://687b2d9e4eebc9c728ca3bef--mytodoapp-project.netlify.app"],
-     supports_credentials=True,
-     allow_headers=["Content-Type", "Authorization"],
-     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+CORS(app, origins=["https://687b2d9e4eebc9c728ca3bef--mytodoapp-project.netlify.app"], supports_credentials=True)
 
-# 🔧 MySQL Config
 app.config['MYSQL_HOST'] = config.MYSQL_HOST
 app.config['MYSQL_USER'] = config.MYSQL_USER
 app.config['MYSQL_PASSWORD'] = config.MYSQL_PASSWORD
@@ -19,7 +14,6 @@ app.config['MYSQL_DB'] = config.MYSQL_DB
 
 mysql = MySQL(app)
 
-# ✅ GET all tasks
 @app.route('/api/tasks', methods=['GET'])
 def get_tasks():
     try:
@@ -31,14 +25,17 @@ def get_tasks():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ✅ POST new task
-@app.route('/api/tasks', methods=['POST'])
+# POST new task
+@app.route('/api/tasks', methods=['POST', 'OPTIONS'])
 def add_task():
+    if request.method == 'OPTIONS':
+        return '', 200
     try:
         data = request.get_json()
         task_name = data.get('title')
         if not task_name:
             return jsonify({'error': 'Title is required'}), 400
+
         cur = mysql.connection.cursor()
         cur.execute("INSERT INTO tasks (task_name, is_completed) VALUES (%s, %s)", (task_name, False))
         mysql.connection.commit()
@@ -47,23 +44,24 @@ def add_task():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ✅ PUT to update task
-@app.route('/api/tasks/<int:id>', methods=['PUT'])
+@app.route('/api/tasks/<int:id>', methods=['PUT', 'OPTIONS'])
 def update_task(id):
+    if request.method == 'OPTIONS':
+        return '', 200
     try:
         data = request.get_json()
-        completed = data.get('completed')
         cur = mysql.connection.cursor()
-        cur.execute("UPDATE tasks SET is_completed = %s WHERE id = %s", (completed, id))
+        cur.execute("UPDATE tasks SET is_completed = %s WHERE id = %s", (data['completed'], id))
         mysql.connection.commit()
         cur.close()
         return jsonify({'message': 'Task updated'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ✅ DELETE task
-@app.route('/api/tasks/<int:id>', methods=['DELETE'])
+@app.route('/api/tasks/<int:id>', methods=['DELETE', 'OPTIONS'])
 def delete_task(id):
+    if request.method == 'OPTIONS':
+        return '', 200
     try:
         cur = mysql.connection.cursor()
         cur.execute("DELETE FROM tasks WHERE id = %s", (id,))
@@ -73,11 +71,10 @@ def delete_task(id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ✅ Root
+# Index route
 @app.route('/')
 def index():
-    return 'Flask To-Do API is running 🚀'
+    return 'Flask To-Do API Running 🚀'
 
-# ✅ Main
 if __name__ == "__main__":
     app.run(debug=True)
